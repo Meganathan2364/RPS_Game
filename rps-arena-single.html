@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stone Paper Scissors</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
+<style>
+:root{--ink:#101340;--court:#2438d9;--court2:#1c2cb4;--chalk:#f7f5ee;--sun:#ffd23f;--coral:#ff6a4d}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:"Bricolage Grotesque",system-ui,sans-serif;color:var(--chalk);background:linear-gradient(90deg,var(--court) 50%,var(--court2) 50%)}
+body::before{content:"";position:fixed;left:50%;top:48%;width:min(46vw,46vh);aspect-ratio:1;border:3px solid rgba(247,245,238,.22);border-radius:50%;transform:translate(-50%,-50%)}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+.score{position:fixed;top:2vh;font-weight:800;font-size:clamp(3.5rem,13vw,9rem);line-height:1;pointer-events:none}
+.score small{font-size:.28em;font-weight:500;opacity:.6;margin-left:.15em}
+.score span{display:block;font-size:clamp(.9rem,1.6vw,1.2rem);font-weight:700;opacity:.85;margin-bottom:.3em}
+#sy{left:4vw;color:var(--sun)}#sb{right:4vw;text-align:right;color:var(--coral)}
+.score.pop b{display:inline-block;animation:pop .4s}
+@keyframes pop{40%{transform:scale(1.25)}}
+#cd{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);text-align:center;font-weight:800;font-size:clamp(4rem,14vw,10rem);line-height:1;pointer-events:none;text-shadow:0 .04em 0 var(--ink)}
+#cd.shoot{color:var(--sun);animation:pop .3s}
+#msg{position:fixed;left:50%;top:58%;transform:translateX(-50%);font-size:clamp(1.05rem,2.4vw,1.7rem);font-weight:700;text-align:center;width:90%;pointer-events:none}
+#hist{position:fixed;top:2.5vh;left:50%;transform:translateX(-50%);display:flex;gap:6px;pointer-events:none}
+#hist i{width:13px;height:13px;border-radius:50%;background:rgba(247,245,238,.3)}
+#hist i.w{background:var(--sun)}#hist i.l{background:var(--coral)}
+#cam{position:fixed;left:2vw;bottom:2vh;width:clamp(96px,13vw,160px);aspect-ratio:4/3;border-radius:14px;object-fit:cover;transform:scaleX(-1);border:3px solid var(--chalk);background:var(--ink);display:none}
+#hud{position:fixed;right:2vw;bottom:2vh;font-size:.85rem;opacity:.75;text-align:right;pointer-events:none}
+#ov{position:fixed;inset:0;background:rgba(16,19,64,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;text-align:center;padding:1.5rem}
+#ov h1{font-size:clamp(2.4rem,7vw,5rem);font-weight:800;line-height:1}
+#ov p{max-width:34rem;opacity:.85;line-height:1.5}
+.btns{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center}
+button{font:700 1.05rem "Bricolage Grotesque",system-ui,sans-serif;padding:.85rem 1.4rem;border-radius:999px;border:3px solid var(--chalk);background:var(--chalk);color:var(--ink);cursor:pointer;transition:transform .12s}
+button.alt{background:transparent;color:var(--chalk)}
+button:hover{transform:translateY(-2px)}button:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+#ov[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+#ov input{font:700 1.1rem "Bricolage Grotesque",system-ui,sans-serif;padding:.8rem 1.2rem;border-radius:999px;border:3px solid var(--chalk);background:transparent;color:var(--chalk);text-align:center;width:min(100%,18rem)}
+#ov input::placeholder{color:rgba(247,245,238,.5)}
+#ov a{color:var(--sun);font-weight:700}
+body{background-image:radial-gradient(rgba(247,245,238,.08) 1.6px,transparent 1.7px),linear-gradient(90deg,var(--court) 50%,var(--court2) 50%);background-size:24px 24px,auto}
+.lab{position:fixed;transform:translateX(-50%);font-weight:700;font-size:clamp(.85rem,1.6vw,1.1rem);pointer-events:none;opacity:.75;transition:opacity .15s,color .15s}
+.lab.on{opacity:1;color:var(--sun)}
+.lab kbd{font:inherit;font-size:.78em;border:2px solid currentColor;border-radius:6px;padding:0 .35em;margin-left:.45em}
+.opts{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;font-size:.9rem}
+.opts label{display:grid;gap:.3rem;justify-items:center;opacity:.9}
+#ov .opts input{width:6.5rem;padding:.5rem .6rem;font-size:1rem}
+
+#dash{position:fixed;inset:0;z-index:5;overflow:auto;background:var(--ink)}
+#dash[hidden]{display:none}
+#dash header{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;padding:1.2rem 4vw}
+#dash header a{color:var(--sun);font-weight:700;margin-right:auto}
+#dash select{font:700 1rem inherit;font-family:inherit;padding:.6rem 1rem;border-radius:999px;border:3px solid var(--chalk);background:var(--ink);color:var(--chalk)}
+#dash header button{padding:.55rem 1.1rem;font-size:.95rem}
+#dash main{padding:0 4vw 4rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:1.2rem}
+#dash section{border:2px solid rgba(247,245,238,.28);border-radius:18px;padding:1.2rem}
+#dash section.wide{grid-column:1/-1}
+#dash h2{font-size:1.15rem;font-weight:700;margin-bottom:.8rem}
+#dash .tiles{display:flex;gap:2rem;flex-wrap:wrap}
+#dash .tiles b{display:block;font-size:2.6rem;font-weight:800;line-height:1}
+#dash .tiles span{opacity:.75;font-size:.9rem}
+#dash .muted{opacity:.7;line-height:1.5}
+#dash svg{width:100%;height:auto}
+#dash .ln{fill:none;stroke:var(--coral);stroke-width:3}
+#dash .base,#dash .half{stroke:var(--chalk);opacity:.4;stroke-dasharray:4 4}
+#dash svg text{fill:var(--chalk);font-size:10px;opacity:.75}
+#dash .bar{display:grid;grid-template-columns:5.5rem 1fr 3rem;gap:.6rem;align-items:center;margin:.45rem 0;font-size:.95rem}
+#dash .bar i{display:block;height:14px;border-radius:7px;background:var(--sun)}
+#dash .bar.c i{background:var(--coral)}
+#dash table{border-collapse:collapse;width:100%;font-size:.92rem}
+#dash td,#dash th{padding:.4rem .5rem;text-align:left;border-bottom:1px solid rgba(247,245,238,.15)}
+#dash .heat td{text-align:center;border:0}
+#dash .heat td.h{text-align:left;opacity:.8}
+</style></head><body>
+
+<canvas id="c"></canvas>
+<span class="lab" data-k="stone">Stone<kbd>R</kbd></span><span class="lab" data-k="paper">Paper<kbd>P</kbd></span><span class="lab" data-k="scissors">Scissors<kbd>S</kbd></span>
+<div class="score" id="sy"><span>You</span><b id="ys">0</b><small>/10</small></div>
+<div class="score" id="sb"><span>Bot</span><b id="bs">0</b><small>/10</small></div>
+<div id="hist"></div><div id="cd"></div><div id="msg"></div>
+<video id="cam" playsinline muted></video><div id="hud"></div>
+<div id="ov">
+  <h1>Stone, paper, scissors</h1>
+  <p id="ovp">First to 10. Count down with the bot, then show your hand right on "Shoot!". The bot picks before it sees you, so nobody can cheat.</p>
+  <input id="name" maxlength="20" placeholder="Your name" autocomplete="off" aria-label="Your name"><div class="opts"><label>Points to win<input id="win" type="number" min="1" max="50" value="10"></label><label>Beat (ms)<input id="beat" type="number" min="300" max="1500" step="50" value="650"></label><label>Reaction window (ms)<input id="lock" type="number" min="100" max="600" step="50" value="200"></label></div><div class="btns"><button id="bcam">Play with camera</button><button id="bkey" class="alt">Play with mouse or keyboard</button></div><a href="#" id="bdash">Open dashboard</a>
+</div>
+<div id="dash" hidden><header><a href="#" id="back">Back to game</a><select id="who" aria-label="Player"></select><button id="exp" class="alt" type="button">Export JSON</button><button id="clr" class="alt" type="button">Clear all data</button></header><main id="out"></main></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module">
+// Procedural 3D hand: spheres + cylinders, no model files. Poses are 5 curl values (0 open, 1 closed).
+const T = THREE;
+const POSE = { stone:[1,1,1,1,1], paper:[0,0,0,0,0], scissors:[.9,0,0,1,1] }; // thumb,index,middle,ring,pinky
+
+function finger(len, r, m) {
+  const root = new T.Group(), joints = [];
+  let parent = root, prev = 0;
+  [.42,.33,.25].forEach((f, i) => {
+    const l = len * f, j = new T.Group();
+    j.position.y = prev; parent.add(j);
+    j.add(new T.Mesh(new T.SphereGeometry(r*1.05,16,12), m));
+    const c = new T.Mesh(new T.CylinderGeometry(r*.92, r, l, 16), m); c.position.y = l/2; j.add(c);
+    if (i === 2) { const t = new T.Mesh(new T.SphereGeometry(r*.92,16,12), m); t.position.y = l; j.add(t); }
+    joints.push(j); parent = j; prev = l;
+  });
+  return { root, joints };
+}
+
+function makeHand(color, flip) {
+  const g = new T.Group(), m = new T.MeshStandardMaterial({ color, roughness:.45 }), f = [];
+  g.add(new T.Mesh(new T.BoxGeometry(1.1,1.2,.42), m));
+  const heel = new T.Mesh(new T.SphereGeometry(.55,24,16), m);
+  heel.scale.set(1,.8,.45); heel.position.y = -.55; g.add(heel);
+  const th = finger(.62,.13,m), pv = new T.Group();
+  pv.position.set(-.55,-.2,0); pv.add(th.root); g.add(pv); th.pivot = pv; f.push(th);
+  [[-.4,.6,.6,.11],[-.13,.6,.68,.115],[.13,.6,.6,.11],[.4,.6,.48,.095]].forEach(([x,y,l,r]) => {
+    const s = finger(l,r,m); s.root.position.set(x,y,0); g.add(s.root); f.push(s);
+  });
+  const w = new T.Group(); w.add(g); w.userData.fingers = f;
+  if (flip) w.scale.x = -1;
+  return w;
+}
+
+function applyPose(h, c) {
+  const F = h.userData.fingers;
+  F[0].pivot.rotation.z = .3 + .75 * (1 - c[0]);
+  F[0].joints.forEach((j,i) => j.rotation.x = c[0] * [.6,.9,.8][i]);
+  for (let k = 1; k < 5; k++) F[k].joints.forEach((j,i) => j.rotation.x = c[k] * [1.45,1.6,1.15][i]);
+}
+
+// Three interactive 3D tokens: rock, paper sheet, scissors. Hover = spin + grow, glow = detected / bot pick.
+
+
+function rock() {
+  const geo = new T.IcosahedronGeometry(.5, 1), p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const k = 1 + (Math.abs(Math.sin(x*12.9 + y*78.2 + z*37.7) * 43758.5) % 1) * .16; // same point = same jitter, no cracks
+    p.setXYZ(i, x*k, y*k*.85, z*k);
+  }
+  geo.computeVertexNormals();
+  return new T.Mesh(geo, new T.MeshStandardMaterial({ color:0xa3a9c4, roughness:.95, flatShading:true }));
+}
+function sheet() {
+  const geo = new T.PlaneGeometry(.85, 1.1, 10, 10), p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setZ(i, Math.sin(p.getX(i)*4) * .07 + p.getY(i) * p.getY(i) * .1);
+  geo.computeVertexNormals();
+  return new T.Mesh(geo, new T.MeshStandardMaterial({ color:0xf7f5ee, roughness:.7, side:T.DoubleSide }));
+}
+function scissors() {
+  const g = new T.Group(), steel = new T.MeshStandardMaterial({ color:0xd7dbe8, metalness:.6, roughness:.3 });
+  const grip = new T.MeshStandardMaterial({ color:0xff6a4d, roughness:.5 }), blades = [];
+  [1, -1].forEach(s => {
+    const pv = new T.Group(), b = new T.Mesh(new T.BoxGeometry(.09,.85,.03), steel); b.position.y = .4;
+    const h = new T.Mesh(new T.TorusGeometry(.14,.035,8,20), grip); h.position.set(-s*.06, -.3, 0);
+    pv.add(b, h); pv.userData.s = s; g.add(pv); blades.push(pv);
+  });
+  g.userData.blades = blades; g.scale.setScalar(.8);
+  return g;
+}
+
+function makeSymbols() {
+  const group = new T.Group(), items = {};
+  [['stone', rock(), -1.7], ['paper', sheet(), 0], ['scissors', scissors(), 1.7]].forEach(([kind, obj, x]) => {
+    const holder = new T.Group(); holder.position.x = x; holder.add(obj); group.add(holder);
+    const mats = []; obj.traverse(o => { if (o.material) mats.push(o.material); o.userData.kind = kind; });
+    items[kind] = { holder, obj, mats, hover:0, glow:0, base:1 };
+  });
+
+  function pick(ray) {
+    const hit = ray.intersectObjects(group.children, true)[0];
+    return hit ? hit.object.userData.kind : null;
+  }
+
+  // hoverKind: pointed at; activeKind: detected/locked player gesture; botKind: bot's revealed pick
+  function update(now, hoverKind, activeKind, botKind) {
+    for (const [kind, it] of Object.entries(items)) {
+      it.hover += ((kind === hoverKind ? 1 : 0) - it.hover) * .15;
+      const target = 1 + it.hover * .25 + (kind === botKind ? .3 : 0) + (kind === activeKind ? .12 : 0);
+      it.base += (target - it.base) * .15;
+      it.holder.scale.setScalar(it.base);
+      it.holder.position.y = Math.sin(now/700 + it.holder.position.x) * .06;
+      it.obj.rotation.y += .008 + it.hover * .05;
+      if (kind === 'stone') it.obj.rotation.x += .004 + it.hover * .03;
+      if (kind === 'paper') it.obj.rotation.x = Math.sin(now/900) * .15;
+      if (kind === 'scissors') { // blades snip faster on hover
+        const open = .28 + Math.sin(now/(240 - it.hover*120)) * (.05 + it.hover * .16);
+        it.obj.userData.blades.forEach(b => b.rotation.z = b.userData.s * open);
+      }
+      const isBot = kind === botKind, isYou = kind === activeKind;
+      it.glow += ((isBot ? .9 : isYou ? .7 : 0) - it.glow) * .2;
+      it.mats.forEach(m => { m.emissive.setHex(isBot ? 0xff6a4d : 0xffd23f); m.emissiveIntensity = it.glow; });
+    }
+  }
+  return { group, pick, update };
+}
+
+// MediaPipe Hand Landmarker -> five smoothed finger curls -> stone / paper / scissors.
+const tracker = { on:false, sm:[1,1,1,1,1], lat:[], seen:0, lm:null, lastVT:-1, video:null };
+const d = (a,b) => Math.hypot(a.x-b.x, a.y-b.y, (a.z-b.z)*.5);
+const clamp = x => Math.max(0, Math.min(1, x));
+const avg = a => a.length ? a.reduce((x,y) => x+y, 0) / a.length : 0;
+
+async function startCamera(video) {
+  tracker.video = video;
+  const stream = await navigator.mediaDevices.getUserMedia({ video:{ width:640, height:480, facingMode:'user' } });
+  video.srcObject = stream; await video.play(); video.style.display = 'block';
+  const V = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+  const { FilesetResolver, HandLandmarker } = await import(V + '/vision_bundle.mjs');
+  const fs = await FilesetResolver.forVisionTasks(V + '/wasm');
+  tracker.lm = await HandLandmarker.createFromOptions(fs, {
+    baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate:'GPU' },
+    runningMode:'VIDEO', numHands:1
+  });
+  tracker.on = true;
+}
+
+function track(now) {
+  const v = tracker.video;
+  if (!tracker.on || v.readyState < 2 || v.currentTime === tracker.lastVT) return;
+  tracker.lastVT = v.currentTime;
+  const t0 = performance.now(), r = tracker.lm.detectForVideo(v, t0);
+  tracker.lat.push(performance.now() - t0); if (tracker.lat.length > 40) tracker.lat.shift();
+  const L = r.landmarks && r.landmarks[0]; if (!L) return;
+  tracker.seen = now; const w = L[0];
+  const raw = [clamp((1 - d(L[4],L[9]) / d(w,L[9])) / .5)];
+  [[5,8],[9,12],[13,16],[17,20]].forEach(([m,t]) => raw.push(clamp((1.85 - d(L[t],w) / d(L[m],w)) / .75)));
+  raw.forEach((x,i) => tracker.sm[i] += (x - tracker.sm[i]) * .55); // light smoothing, low lag
+}
+
+function classify(c) {
+  const e = c.slice(1).map(v => v < .45), n = e.filter(Boolean).length;
+  if (e[0] && e[1] && !e[2] && !e[3]) return 'scissors';
+  if (n >= 3) return 'paper';
+  if (n <= 1 && !(e[0] && e[1])) return 'stone';
+  return null;
+}
+
+// Everything is saved in this browser's localStorage. One row per round, written immediately.
+const KEY = 'rps.v1';
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || { players:{}, matches:[] }; } catch { return { players:{}, matches:[] }; } };
+const save = db => localStorage.setItem(KEY, JSON.stringify(db));
+const player = (db, name) => db.players[name] || (db.players[name] = { created:Date.now(), rounds:[], bandit:null });
+const clearAll = () => localStorage.removeItem(KEY);
+
+const store = { load, save, player, clearAll };
+// The learning bot: several "experts" each predict the player's next move; a Thompson-sampling
+// bandit picks which expert to trust per player. Nothing is pre-trained: it all starts uniform.
+const MOVES = ['stone', 'paper', 'scissors'];
+const counter = m => (m + 1) % 3;           // the move that beats m
+const EXPERTS = ['freq', 'markov1', 'markov2', 'reaction', 'global', 'twoStep'];
+const uni = () => [1/3, 1/3, 1/3];
+const norm = c => { const s = c[0] + c[1] + c[2]; return c.map(x => x / s); };
+const argmax = d => { const m = Math.max(...d), ix = d.map((v,i) => v === m ? i : -1).filter(i => i >= 0); return ix[Math.random() * ix.length | 0]; };
+const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+
+// counts of "situation -> next player move", recent rounds weigh more; only pairs inside one match
+function markov(h, keyOf, cur) {
+  const n = h.length; if (!n || h[n-1].m !== cur) return uni();
+  const kNow = keyOf(h, n - 1); if (kNow == null) return uni();
+  const c = [.5, .5, .5];
+  for (let i = 1; i < n; i++) if (h[i].m === h[i-1].m && keyOf(h, i - 1) === kNow) c[h[i].p] += Math.pow(.97, n - 1 - i);
+  return norm(c);
+}
+const E = {
+  freq:     h => { const c = [1,1,1], n = h.length; h.forEach((r,i) => c[r.p] += Math.pow(.9, n - 1 - i)); return norm(c); },
+  markov1:  (h, cur) => markov(h, (h,i) => h[i].p, cur),                                   // after my last move
+  markov2:  (h, cur) => markov(h, (h,i) => i > 0 && h[i-1].m === h[i].m ? h[i-1].p * 3 + h[i].p : null, cur), // after my last two
+  reaction: (h, cur) => markov(h, (h,i) => h[i].p * 3 + h[i].b, cur),                      // after my move + the bot's move (win/lose habits)
+  global:   (h, cur, G) => norm(G[h.length && h[h.length-1].m === cur ? h[h.length-1].p : 3]), // what everyone tends to do
+  twoStep:  (h, cur) => { const d = E.markov1(h, cur), o = [0,0,0]; d.forEach((v,m) => o[(m + 2) % 3] = v); return o; } // player expects a counter and beats it
+};
+
+function buildGlobal(db) {
+  const G = [[1,1,1],[1,1,1],[1,1,1],[1,1,1]]; // rows: last move stone/paper/scissors, or 3 = first round of a match
+  Object.values(db.players).forEach(P => P.rounds.forEach((r,i,a) => G[i > 0 && a[i-1].m === r.m ? a[i-1].p : 3][r.p]++));
+  return G;
+}
+
+function makeBrain(saved, G) {
+  const B = saved || Object.fromEntries(EXPERTS.map(e => [e, { a: e === 'global' ? 2 : 1, b: 1 }])); // Beta(a,b) trust per expert
+  return {
+    B,
+    decide(h, cur) {
+      const dists = {}; EXPERTS.forEach(e => dists[e] = E[e](h, cur, G));
+      let best = null, top = -1;
+      EXPERTS.forEach(e => { const { a, b } = B[e], m = a / (a + b), sd = Math.sqrt(a * b / ((a + b) ** 2 * (a + b + 1))), x = m + sd * gauss(); if (x > top) { top = x; best = e; } });
+      const d = dists[best], pred = argmax(d), explore = Math.random() < .08; // small random share keeps it unpredictable
+      return { expert: best, dists, pred, conf: Math.max(...d), explore, move: explore ? Math.random() * 3 | 0 : counter(pred) };
+    },
+    learn(h, cur, rec, actual) {   // every expert is scored on every round, whichever one played
+      EXPERTS.forEach(e => { const p = rec.dists[e][actual], x = B[e]; x.a = Math.max(1, x.a * .97 + p); x.b = Math.max(1, x.b * .97 + 1 - p); });
+      G[h.length && h[h.length-1].m === cur ? h[h.length-1].p : 3][actual]++;
+    }
+  };
+}
+
+
+const $ = id => document.getElementById(id);
+const NAMES = ['stone','paper','scissors'], BEATS = { stone:'scissors', paper:'stone', scissors:'paper' };
+// defaults; the start screen lets you change points to win, beat speed and reaction window
+let BEAT = 650, LOCK_BEFORE = 40, LOCK_AFTER = 200, WIN = 10;
+
+/* ---- scene ---- */
+const renderer = new THREE.WebGLRenderer({ canvas:$('c'), antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(45, 1, .1, 50);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x3040a0, .95));
+const key = new THREE.DirectionalLight(0xffffff, .9); key.position.set(2,4,6); scene.add(key);
+const you = makeHand(0xffd23f, false), bot = makeHand(0xff6a4d, true);
+you.rotation.set(-.15,.45,.1); bot.rotation.set(-.15,-.45,-.1);
+const sym = makeSymbols();
+scene.add(you, bot, sym.group);
+function resize() {
+  const w = innerWidth, h = innerHeight, a = w / h;
+  renderer.setSize(w, h, false); camera.aspect = a;
+  camera.position.set(0, .3, a < 1 ? 13 : 8.5); camera.lookAt(0, -.1, 0); camera.updateProjectionMatrix();
+  const x = a < 1 ? 1.6 : 2.6; you.position.x = -x; bot.position.x = x;
+  sym.group.position.y = a < 1 ? -3.6 : -2.7; sym.group.scale.setScalar(a < 1 ? 1.5 : 1);
+}
+addEventListener('resize', resize); resize();
+
+/* ---- input: camera gesture, keyboard, or clicking a 3D symbol ---- */
+let manualG = null, manualUntil = 0, hoverKind = null, px = 0, py = 0;
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+function aim(e) {
+  mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); px = mouse.x; py = mouse.y;
+  ray.setFromCamera(mouse, camera); hoverKind = $('ov').hidden ? sym.pick(ray) : null;
+  $('c').style.cursor = hoverKind ? 'pointer' : 'default';
+}
+addEventListener('pointermove', aim);
+addEventListener('pointerdown', e => { aim(e); if (hoverKind) { manualG = hoverKind; manualUntil = performance.now() + 450; } });
+addEventListener('keydown', e => {
+  const g = { r:'stone', p:'paper', s:'scissors' }[e.key.toLowerCase()];
+  if (g) { manualG = g; manualUntil = performance.now() + 450; }
+});
+const currentGesture = now => now < manualUntil ? manualG : (tracker.on && now - tracker.seen < 300 ? classify(tracker.sm) : null);
+
+/* ---- game state machine (timestamp based) ---- */
+let phase = 'idle', t0 = 0, shootT = 0, botMove = 'stone', samples = [], ys = 0, bs = 0, lockedG = null;
+const rounds = []; window.rounds = rounds;
+let db, me, brain, matchId, hist = [], rec = null;
+
+function updScore(w) {
+  $('ys').textContent = ys; $('bs').textContent = bs;
+  if (w) { const el = $(w === 'y' ? 'sy' : 'sb'); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+}
+function begin() {
+  me = ($('name').value.trim() || 'Guest').slice(0, 20); localStorage.setItem('rps.last', me);
+  const num = (id, lo, hi, d) => Math.min(hi, Math.max(lo, +$(id).value || d));
+  WIN = num('win', 1, 50, 10); BEAT = num('beat', 300, 1500, 650); LOCK_AFTER = num('lock', 100, 600, 200);
+  localStorage.setItem('rps.cfg', JSON.stringify([WIN, BEAT, LOCK_AFTER]));
+  document.querySelectorAll('.score small').forEach(s => s.textContent = '/' + WIN);
+  db = store.load(); const P = store.player(db, me); brain = makeBrain(P.bandit, buildGlobal(db)); hist = P.rounds; matchId = Date.now();
+  $('ov').hidden = true; ys = bs = 0; $('hist').innerHTML = ''; rounds.length = 0; updScore(); nextRound(); }
+function nextRound() {
+  rec = brain.decide(hist, matchId); botMove = NAMES[rec.move]; // bot commits before it can see you
+  t0 = performance.now() + 900; shootT = t0 + 3 * BEAT; samples = []; lockedG = null; phase = 'count'; $('msg').textContent = '';
+}
+function resolve() {
+  const votes = {};
+  samples.filter(s => s.g && s.t >= shootT - LOCK_BEFORE && s.t <= shootT + LOCK_AFTER).forEach(s => votes[s.g] = (votes[s.g] || 0) + 1);
+  const top = Object.entries(votes).sort((a,b) => b[1] - a[1])[0];
+  phase = 'reveal';
+  if (!top || top[1] < 3) { $('msg').textContent = "Didn't catch your hand. Replaying the round."; setTimeout(nextRound, 1500); return; }
+  lockedG = top[0]; let out = 'tie';
+  if (BEATS[lockedG] === botMove) { out = 'win'; ys++; updScore('y'); }
+  else if (BEATS[botMove] === lockedG) { out = 'loss'; bs++; updScore('b'); }
+  const pi = NAMES.indexOf(lockedG); // learn right now, save right now
+  const row = { m:matchId, n:rounds.length + 1, p:pi, b:NAMES.indexOf(botMove), res:out, pred:rec.pred, conf:+rec.conf.toFixed(2), expert:rec.expert, hit:rec.pred === pi ? 1 : 0, rnd:rec.explore ? 1 : 0, t:Date.now() };
+  brain.learn(hist, matchId, rec, pi); hist.push(row); store.player(db, me).bandit = brain.B; store.save(db);
+  $('msg').textContent = { win:'You win this round', loss:'Bot wins this round', tie:'Tie, nobody scores' }[out] + ` (${lockedG} vs ${botMove})`;
+  const dot = document.createElement('i'); dot.className = out === 'win' ? 'w' : out === 'loss' ? 'l' : ''; $('hist').append(dot);
+  if ($('hist').children.length > 14) $('hist').firstChild.remove();
+  rounds.push({ n:rounds.length + 1, player:lockedG, bot:botMove, result:out, scoreBefore:[ys - (out === 'win'), bs - (out === 'loss')], trackMs:Math.round(avg(tracker.lat)) });
+  setTimeout(ys >= WIN || bs >= WIN ? over : nextRound, ys >= WIN || bs >= WIN ? 1600 : 1700);
+}
+function over() {
+  db.matches.push({ m:matchId, name:me, ys, bs, rounds:rounds.length, t:Date.now() }); store.save(db);
+  phase = 'idle'; $('cd').textContent = ''; $('msg').textContent = '';
+  $('ov').querySelector('h1').textContent = ys >= WIN ? 'You beat the bot' : 'The bot got to 10';
+  $('ovp').textContent = `Final score ${ys} to ${bs}. Every round is saved. Open the dashboard to see how the bot read you.`;
+  $('bcam').textContent = 'Play again'; $('bcam').onclick = begin; $('bkey').style.display = 'none'; $('ov').hidden = false;
+}
+
+/* ---- main loop ---- */
+const labs = [...document.querySelectorAll('.lab')], tmp = new THREE.Vector3();
+const cur = [1,1,1,1,1], bcur = [1,1,1,1,1]; let wasVis = false;
+function frame(now) {
+  requestAnimationFrame(frame);
+  track(now);
+  const g = currentGesture(now); let bobY = 0;
+  if (phase === 'count') {
+    const el = now - t0;
+    if (now < t0) { $('cd').textContent = 'Ready'; $('cd').className = ''; }
+    else if (now < shootT) {
+      $('cd').textContent = 3 - Math.floor(el / BEAT); $('cd').className = '';
+      bobY = .45 * Math.abs(Math.sin((el % BEAT) / BEAT * Math.PI)); // both hands bounce on the beat
+    } else {
+      $('cd').textContent = 'Shoot!'; $('cd').className = 'shoot';
+      samples.push({ t:now, g });
+      if (now >= shootT + LOCK_AFTER + 20) resolve();
+    }
+  }
+  const wantY = phase === 'reveal' && lockedG ? POSE[lockedG] : (g && now < manualUntil ? POSE[g] : (tracker.on ? tracker.sm : POSE.stone));
+  const wantB = phase === 'reveal' && lockedG ? POSE[botMove] : POSE.stone; // bot stays a fist until the lock window closes
+  // keyboard/mouse mode: no hands until the reveal, then both appear already showing their sign
+  const vis = tracker.on || (phase === 'reveal' && lockedG);
+  if (vis && !wasVis && !tracker.on) { cur.splice(0, 5, ...wantY); bcur.splice(0, 5, ...wantB); }
+  wasVis = vis; you.visible = bot.visible = vis;
+  for (let i = 0; i < 5; i++) { cur[i] += (wantY[i] - cur[i]) * .4; bcur[i] += (wantB[i] - bcur[i]) * .45; }
+  applyPose(you, cur); applyPose(bot, bcur);
+  const idle = Math.sin(now / 600) * .05;
+  you.position.y = bot.position.y = -.3 + bobY + idle;
+  const reveal = phase === 'reveal' && lockedG;
+  sym.update(now, hoverKind, reveal ? lockedG : g, reveal ? botMove : null);
+  $('hud').textContent = tracker.on ? `tracking ${avg(tracker.lat).toFixed(0)} ms · seeing ${g || 'no hand'}` : 'click a symbol or press R, P, S';
+  camera.position.x += (px * .7 - camera.position.x) * .05; camera.position.y += (.3 + py * .35 - camera.position.y) * .05; camera.lookAt(0, -.1, 0); // scene follows the mouse
+  camera.updateMatrixWorld();
+  labs.forEach(el => { const s = sym.group.scale.x; tmp.set({ stone:-1.7, paper:0, scissors:1.7 }[el.dataset.k] * s, sym.group.position.y - .95 * s, 0).project(camera);
+    el.style.left = (tmp.x * .5 + .5) * innerWidth + 'px'; el.style.top = (-tmp.y * .5 + .5) * innerHeight + 'px';
+    el.classList.toggle('on', el.dataset.k === hoverKind || el.dataset.k === (reveal ? lockedG : g)); });
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(frame);
+
+$('bcam').onclick = async () => {
+  $('ovp').textContent = 'Loading hand tracking…';
+  try { await startCamera($('cam')); begin(); }
+  catch (e) { console.error(e); $('ovp').textContent = 'Camera or tracking could not start (' + (e.message || e) + '). Serve this folder over http://localhost and allow the camera, or play with the mouse or keyboard.'; }
+};
+$('bkey').onclick = begin;
+$('name').value = localStorage.getItem('rps.last') || '';
+try { const c = JSON.parse(localStorage.getItem('rps.cfg')); if (c) { $('win').value = c[0]; $('beat').value = c[1]; $('lock').value = c[2]; } } catch {}
+
+function openDash() {
+const Q = s => document.querySelector(s), db = store.load(), names = Object.keys(db.players);
+const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+const pct = x => Math.round(x * 100) + '%', mean = a => a.length ? a.reduce((x,y) => x + y, 0) / a.length : 0;
+Q('#who').innerHTML = '<option value="*">All players</option>' + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+Q('#who').onchange = draw;
+Q('#clr').onclick = () => { if (confirm('Delete every saved round and match?')) { store.clearAll(); location.reload(); } };
+Q('#exp').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 1)], { type:'application/json' })); a.download = 'rps-data.json'; a.click(); };
+
+function line(v, note) {
+  if (v.length < 2) return '<p class="muted">Not enough data yet.</p>';
+  const W = 560, H = 170, p = 26, x = i => p + i * (W - 2*p) / (v.length - 1), y = t => H - p - t * (H - 2*p);
+  const pts = v.map((t,i) => `${x(i).toFixed(1)},${y(t).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}"><line class="base" x1="${p}" x2="${W-p}" y1="${y(1/3)}" y2="${y(1/3)}"/><line class="half" x1="${p}" x2="${W-p}" y1="${y(.5)}" y2="${y(.5)}"/>
+  <text x="${p}" y="${y(1/3) + 12}">33% = a random bot</text><text x="${p}" y="${y(.5) - 4}">50%</text><polyline class="ln" points="${pts}"/></svg><p class="muted">${note}</p>`;
+}
+const bars = (items, cls = '') => items.map(([l, v]) => `<div class="bar ${cls}"><span>${l}</span><i style="width:${Math.max(2, v * 100)}%"></i><span>${pct(v)}</span></div>`).join('');
+
+function draw() {
+  const who = Q('#who').value, out = Q('#out');
+  const rows = (who === '*' ? names.flatMap(n => db.players[n].rounds) : (db.players[who] ? db.players[who].rounds : [])).slice().sort((a,b) => a.t - b.t);
+  const matches = db.matches.filter(m => who === '*' || m.name === who);
+  if (!rows.length) { out.innerHTML = '<section class="wide"><h2>No rounds yet</h2><p class="muted">Play a match, then come back. Every round is saved as it happens.</p></section>'; return; }
+  const n = rows.length, botWins = rows.map(r => r.res === 'loss' ? 1 : 0);
+  const roll = botWins.map((_, i) => mean(botWins.slice(Math.max(0, i - 9), i + 1)));
+  const perMatch = [...new Set(rows.map(r => r.m))].map(m => mean(rows.filter(r => r.m === m).map(r => r.res === 'loss' ? 1 : 0)));
+
+  const dist = [0,1,2].map(m => [MOVES[m], rows.filter(r => r.p === m).length / n]);
+  const T = [0,1,2].map(() => [0,0,0]);
+  rows.forEach((r,i) => { const q = rows[i-1]; if (q && q.m === r.m) T[q.p][r.p]++; });
+  const heat = T.map((row, i) => { const s = row[0] + row[1] + row[2];
+    return `<tr><td class="h">after ${MOVES[i]}</td>${row.map(c => `<td style="background:rgba(255,210,63,${s ? .15 + .75 * c / s : 0})">${s ? pct(c / s) : '-'}</td>`).join('')}</tr>`; }).join('');
+
+  const habit = ['win', 'loss', 'tie'].map(k => {
+    const xs = rows.filter((r,i) => r.res === k && rows[i+1] && rows[i+1].m === r.m).map(r => rows[rows.indexOf(r) + 1]);
+    const src = rows.filter((r,i) => r.res === k && rows[i+1] && rows[i+1].m === r.m);
+    const stay = mean(src.map((r,i) => xs[i].p === r.p ? 1 : 0)), beat = mean(src.map((r,i) => xs[i].p === (r.b + 1) % 3 ? 1 : 0));
+    return `<tr><td>after you ${k === 'win' ? 'win' : k === 'loss' ? 'lose' : 'tie'}</td><td>${src.length ? pct(stay) : '-'}</td><td>${src.length ? pct(beat) : '-'}</td><td>${src.length}</td></tr>`;
+  }).join('');
+
+  const bandits = (who === '*' ? names.map(x => db.players[x].bandit) : [db.players[who] && db.players[who].bandit]).filter(Boolean);
+  const trust = EXPERTS.map(e => [e, mean(bandits.map(b => b[e].a / (b[e].a + b[e].b)))]);
+  const names_ = { freq:'recent habit', markov1:'last move', markov2:'last two moves', reaction:'reacts to result', global:'all players', twoStep:'outsmarts bot' };
+  const used = EXPERTS.map(e => [names_[e], rows.filter(r => r.expert === e).length / n]);
+
+  out.innerHTML = `
+  <section class="wide"><div class="tiles">
+    <div><b>${n}</b><span>rounds</span></div><div><b>${matches.length}</b><span>matches</span></div>
+    <div><b>${pct(mean(botWins))}</b><span>bot wins (random bot: 33%)</span></div>
+    <div><b>${pct(mean(rows.map(r => r.res === 'win' ? 1 : 0)))}</b><span>you win</span></div>
+    <div><b>${pct(mean(rows.map(r => r.hit)))}</b><span>bot guessed your move (chance: 33%)</span></div></div></section>
+  <section class="wide"><h2>Bot win rate over the last 10 rounds</h2>${line(roll, 'Above the 33% line means the bot is reading this player.')}</section>
+  <section><h2>Bot win rate per match</h2>${line(perMatch, 'One point per match, oldest to newest. Rising means it improves across games.')}</section>
+  <section><h2>What you play</h2>${bars(dist)}</section>
+  <section><h2>Your next move, given your last</h2><table class="heat"><tr><th></th>${MOVES.map(m => `<th>${m}</th>`).join('')}</tr>${heat}</table></section>
+  <section><h2>Your habits after each result</h2><table><tr><th></th><th>repeat</th><th>beat bot's last</th><th>times</th></tr>${habit}</table></section>
+  <section><h2>Which prediction the bot trusts</h2>${bars(trust.map(([e, v]) => [names_[e], v]), 'c')}<p class="muted">Each bar is how often that method guessed right. The bot leans on the best one.</p></section>
+  <section><h2>Which one it actually played</h2>${bars(used, 'c')}</section>
+  <section class="wide"><h2>Matches</h2><table><tr><th>when</th><th>player</th><th>you - bot</th><th>rounds</th><th>bot wins</th></tr>
+  ${matches.slice().reverse().map(m => `<tr><td>${new Date(m.t).toLocaleString()}</td><td>${esc(m.name)}</td><td>${m.ys} - ${m.bs}</td><td>${m.rounds}</td><td>${pct(mean(rows.filter(r => r.m === m.m).map(r => r.res === 'loss' ? 1 : 0)))}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No finished matches yet.</td></tr>'}</table></section>`;
+}
+draw();
+
+}
+$('bdash').onclick = e => { e.preventDefault(); $('dash').hidden = false; openDash(); };
+$('back').onclick = e => { e.preventDefault(); $('dash').hidden = true; };
+</script>
+</body></html>

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stone Paper Scissors</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<canvas id="c"></canvas>
+<span class="lab" data-k="stone">Stone<kbd>R</kbd></span><span class="lab" data-k="paper">Paper<kbd>P</kbd></span><span class="lab" data-k="scissors">Scissors<kbd>S</kbd></span>
+<div class="score" id="sy"><span>You</span><b id="ys">0</b><small>/10</small></div>
+<div class="score" id="sb"><span>Bot</span><b id="bs">0</b><small>/10</small></div>
+<div id="hist"></div><div id="cd"></div><div id="msg"></div>
+<video id="cam" playsinline muted></video><div id="hud"></div>
+<div id="ov">
+  <h1>Stone, paper, scissors</h1>
+  <p id="ovp">First to 10. Count down with the bot, then show your hand right on "Shoot!". The bot picks before it sees you, so nobody can cheat.</p>
+  <input id="name" maxlength="20" placeholder="Your name" autocomplete="off" aria-label="Your name">
+  <div class="btns"><button id="newplayer" class="alt" type="button">New player</button></div>
+  <div class="opts"><label>Points to win<input id="win" type="number" min="1" max="50" value="10"></label><label>Beat (ms)<input id="beat" type="number" min="300" max="1500" step="50" value="650"></label><label>Reaction window (ms)<input id="lock" type="number" min="100" max="600" step="50" value="200"></label></div><div class="btns"><button id="bcam">Play with camera</button><button id="bkey" class="alt">Play with mouse or keyboard</button></div><a href="dashboard.html">Open dashboard</a>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body></html>
